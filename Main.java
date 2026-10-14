@@ -3,20 +3,24 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 
-/** Консольный интерфейс для работы с матрицами A и B. */
+/** Консольный интерфейс для матриц A, B и последнего матричного результата R. */
 public final class Main {
     private static final BufferedReader INPUT = new BufferedReader(new InputStreamReader(System.in));
     private static ComplexMatrix a;
     private static ComplexMatrix b;
+    private static ComplexMatrix result;
+    private static Complex lastDeterminant;
+    private static String lastDeterminantSource;
 
     public static void main(String[] args) throws IOException {
         System.setOut(new PrintStream(System.out, true, "UTF-8"));
         System.out.println("Матрицы комплексных чисел. Числа вводите через точку, например: 2.5 -3");
         while (true) {
-            System.out.println("\n1 — создать A     2 — создать B     3 — показать A и B");
+            System.out.println("\n1 — создать A     2 — создать B     3 — показать A, B и результаты");
             System.out.println("4 — A + B         5 — A × B         6 — A / B");
             System.out.println("7 — Aᵀ            8 — Bᵀ            9 — det(A)");
-            System.out.println("10 — det(B)       0 — выход");
+            System.out.println("10 — det(B)       11 — R → A         12 — R → B");
+            System.out.println("0 — выход");
             String choice = readLine("Операция: ");
             if (choice == null || choice.equals("0")) {
                 return;
@@ -34,30 +38,43 @@ public final class Main {
                     case "3":
                         printMatrix("A", a);
                         printMatrix("B", b);
+                        printMatrix("R (последний матричный результат)", result);
+                        if (lastDeterminant != null) {
+                            System.out.println("Последний определитель det(" + lastDeterminantSource
+                                    + ") = " + lastDeterminant);
+                        }
                         break;
                     case "4":
                         requireBoth();
-                        printMatrix("A + B", a.add(b));
+                        saveMatrixResult("A + B", a.add(b));
                         break;
                     case "5":
                         requireBoth();
-                        printMatrix("A × B", a.multiply(b));
+                        saveMatrixResult("A × B", a.multiply(b));
                         break;
                     case "6":
                         requireBoth();
-                        printMatrix("A / B = A × B⁻¹", a.divide(b));
+                        saveMatrixResult("A / B = A × B⁻¹", a.divide(b));
                         break;
                     case "7":
-                        printMatrix("Aᵀ", requireMatrix(a, "A").transpose());
+                        saveMatrixResult("Aᵀ", requireMatrix(a, "A").transpose());
                         break;
                     case "8":
-                        printMatrix("Bᵀ", requireMatrix(b, "B").transpose());
+                        saveMatrixResult("Bᵀ", requireMatrix(b, "B").transpose());
                         break;
                     case "9":
-                        System.out.println("det(A) = " + requireMatrix(a, "A").determinant());
+                        saveDeterminant("A", requireMatrix(a, "A").determinant());
                         break;
                     case "10":
-                        System.out.println("det(B) = " + requireMatrix(b, "B").determinant());
+                        saveDeterminant("B", requireMatrix(b, "B").determinant());
+                        break;
+                    case "11":
+                        a = requireResult();
+                        printMatrix("A (скопирована из R)", a);
+                        break;
+                    case "12":
+                        b = requireResult();
+                        printMatrix("B (скопирована из R)", b);
                         break;
                     default:
                         System.out.println("Неизвестная операция.");
@@ -133,6 +150,24 @@ public final class Main {
     private static void requireBoth() {
         requireMatrix(a, "A");
         requireMatrix(b, "B");
+    }
+
+    private static ComplexMatrix requireResult() {
+        if (result == null) {
+            throw new IllegalArgumentException("сначала выполните операцию с матрицей");
+        }
+        return result;
+    }
+
+    private static void saveMatrixResult(String operation, ComplexMatrix matrix) {
+        result = matrix;
+        printMatrix("R = " + operation, result);
+    }
+
+    private static void saveDeterminant(String source, Complex determinant) {
+        lastDeterminant = determinant;
+        lastDeterminantSource = source;
+        System.out.println("det(" + source + ") = " + determinant);
     }
 
     private static void printMatrix(String name, ComplexMatrix matrix) {
